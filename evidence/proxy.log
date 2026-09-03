@@ -1,0 +1,1 @@
+proxy up on :8080 -> live backend SLOT=blue PORT=8000

@@ -1,0 +1,70 @@
+# docker-compose.yml — Infrastructure-as-Code declaration of the deployment.
+#
+# Declares two identical service slots ("blue" and "green") behind an
+# nginx reverse proxy. Only one slot is "live" (routed to by nginx) at a
+# time; the other holds the previous or next version. This is what makes
+# the blue-green rollout in deployment/switch_traffic.sh possible: nginx
+# config is swapped, not the containers themselves, so a rollback is a
+# config reload away rather than a redeploy.
+#
+# Usage:
+#   docker compose up -d --build          # start blue (live) + green (idle)
+#   docker compose exec proxy nginx -s reload   # after switching upstream
+
+version: "3.9"
+
+services:
+  app-blue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dam405-wine-predict-api:${IMAGE_TAG:-latest}
+    container_name: wine-api-blue
+    environment:
+      - SLOT=blue
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - wine-net
+
+  app-green:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dam405-wine-predict-api:${IMAGE_TAG:-latest}
+    container_name: wine-api-green
+    environment:
+      - SLOT=green
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - wine-net
+
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: wine-api-proxy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./deployment/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app-blue
+      - app-green
+    networks:
+      - wine-net
+
+networks:
+  wine-net:
+    driver: bridge

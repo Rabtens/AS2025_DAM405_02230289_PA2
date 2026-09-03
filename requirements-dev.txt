@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest==8.3.3
+requests==2.33.1
+flake8==7.1.1

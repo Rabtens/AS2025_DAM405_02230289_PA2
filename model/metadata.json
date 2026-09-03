@@ -1,0 +1,116 @@
+{
+  "model_version": "1.0.0",
+  "trained_at_utc": "2026-09-02T17:49:07Z",
+  "algorithm": "RandomForestClassifier",
+  "dataset": "sklearn.datasets.load_wine",
+  "feature_names": [
+    "alcohol",
+    "malic_acid",
+    "ash",
+    "alcalinity_of_ash",
+    "magnesium",
+    "total_phenols",
+    "flavanoids",
+    "nonflavanoid_phenols",
+    "proanthocyanins",
+    "color_intensity",
+    "hue",
+    "od280/od315_of_diluted_wines",
+    "proline"
+  ],
+  "n_features": 13,
+  "class_names": [
+    "class_0",
+    "class_1",
+    "class_2"
+  ],
+  "test_accuracy": 1.0,
+  "test_f1_macro": 1.0,
+  "classification_report": {
+    "class_0": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 12.0
+    },
+    "class_1": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 14.0
+    },
+    "class_2": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 10.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 36.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 36.0
+    }
+  },
+  "feature_ranges": {
+    "alcohol": [
+      11.03,
+      14.83
+    ],
+    "malic_acid": [
+      0.74,
+      5.8
+    ],
+    "ash": [
+      1.36,
+      3.23
+    ],
+    "alcalinity_of_ash": [
+      10.6,
+      30.0
+    ],
+    "magnesium": [
+      70.0,
+      162.0
+    ],
+    "total_phenols": [
+      0.98,
+      3.88
+    ],
+    "flavanoids": [
+      0.34,
+      5.08
+    ],
+    "nonflavanoid_phenols": [
+      0.13,
+      0.66
+    ],
+    "proanthocyanins": [
+      0.41,
+      3.58
+    ],
+    "color_intensity": [
+      1.28,
+      13.0
+    ],
+    "hue": [
+      0.48,
+      1.71
+    ],
+    "od280/od315_of_diluted_wines": [
+      1.27,
+      4.0
+    ],
+    "proline": [
+      278.0,
+      1680.0
+    ]
+  }
+}

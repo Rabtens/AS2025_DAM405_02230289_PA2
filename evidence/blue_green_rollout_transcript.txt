@@ -1,0 +1,22 @@
+=== STEP 1: Pre-cutover state — proxy routes to BLUE (v1.0.0) ===
+X-Upstream-Slot: blue
+{"algorithm":"RandomForestClassifier","model_version":"1.0.0","test_accuracy":1.0,"trained_at_utc":"2026-08-30T16:04:02Z"}
+
+=== STEP 2: Smoke-test the GREEN candidate (v1.1.0) directly on :8001, bypassing the proxy — this is what the pipeline does before any traffic is sent to it ===
+{"model_version":"1.1.0","status":"healthy","uptime_seconds":259.8}
+
+{"model_version":"1.1.0","prediction":"class_0","prediction_index":0,"probabilities":{"class_0":0.9796,"class_1":0.0104,"class_2":0.01}}
+
+=== STEP 3: GREEN passed its smoke test -> perform the cutover (equivalent to editing nginx.conf + 'nginx -s reload') ===
+{"live_slot": "green", "live_port": 8001}
+=== STEP 4: Post-cutover verification — proxy now routes to GREEN (v1.1.0), zero container restarts, zero downtime ===
+X-Upstream-Slot: green
+{"algorithm":"RandomForestClassifier","model_version":"1.1.0","test_accuracy":1.0,"trained_at_utc":"2026-08-30T16:04:02Z"}
+
+{"model_version":"1.1.0","prediction":"class_0","prediction_index":0,"probabilities":{"class_0":0.9796,"class_1":0.0104,"class_2":0.01}}
+
+=== STEP 5: Simulate a problem discovered post-release -> ROLLBACK to BLUE (v1.0.0) ===
+{"live_slot": "blue", "live_port": 8000}
+=== STEP 6: Verify rollback — proxy is back on BLUE (v1.0.0), old slot was never stopped so this was instant ===
+X-Upstream-Slot: blue
+{"algorithm":"RandomForestClassifier","model_version":"1.0.0","test_accuracy":1.0,"trained_at_utc":"2026-08-30T16:04:02Z"}

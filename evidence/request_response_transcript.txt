@@ -1,0 +1,39 @@
+=== GET /health ===
+{"model_version":"1.0.0","status":"healthy","uptime_seconds":14.5}
+
+HTTP 200
+
+=== GET /version ===
+{"algorithm":"RandomForestClassifier","model_version":"1.0.0","test_accuracy":1.0,"trained_at_utc":"2026-08-30T16:04:02Z"}
+
+HTTP 200
+
+=== POST /predict  (valid payload, sample A) ===
+{"model_version":"1.0.0","prediction":"class_0","prediction_index":0,"probabilities":{"class_0":0.9796,"class_1":0.0104,"class_2":0.01}}
+
+HTTP 200
+
+=== POST /predict  (valid payload, sample B - different class) ===
+{"model_version":"1.0.0","prediction":"class_1","prediction_index":1,"probabilities":{"class_0":0.0521,"class_1":0.9479,"class_2":0.0}}
+
+HTTP 200
+
+=== POST /predict  (missing features -> expect 400) ===
+{"detail":"Missing required feature(s): ['malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids', 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']","error":"Invalid input"}
+
+HTTP 400
+
+=== POST /predict  (non-numeric feature -> expect 400) ===
+{"detail":"Feature 'alcohol' must be numeric, got str.","error":"Invalid input"}
+
+HTTP 400
+
+=== POST /predict  (wrong content-type -> expect 415) ===
+{"error":"Content-Type must be application/json"}
+
+HTTP 415
+
+=== GET /nonexistent -> expect 404 ===
+{"detail":"Valid endpoints: /health, /version, /predict","error":"Not found"}
+
+HTTP 404

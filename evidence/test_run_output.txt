@@ -1,0 +1,12 @@
+PASS - health_200
+PASS - version_200
+PASS - predict_valid_200
+PASS - predict_missing_features_key_400
+PASS - predict_missing_individual_feature_400
+PASS - predict_non_numeric_400
+PASS - predict_unexpected_feature_400
+PASS - predict_wrong_content_type_415
+PASS - predict_empty_body_400
+PASS - unknown_route_404
+PASS - feature_schema_13
+11/11 checks passed

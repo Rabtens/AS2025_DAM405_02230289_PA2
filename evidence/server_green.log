@@ -1,0 +1,17 @@
+2026-08-30 16:07:39,837 INFO [wine-predict-api] Model loaded: version=1.1.0 features=13
+ * Serving Flask app 'app.main'
+ * Debug mode: off
+2026-08-30 16:07:39,841 INFO [werkzeug] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8001
+ * Running on http://192.0.2.2:8001
+2026-08-30 16:07:39,841 INFO [werkzeug] [33mPress CTRL+C to quit[0m
+2026-08-30 16:07:41,526 INFO [werkzeug] 127.0.0.1 - - [30/Aug/2026 16:07:41] "GET /version HTTP/1.1" 200 -
+2026-08-30 16:07:41,554 INFO [wine-predict-api] Prediction served: class_0
+2026-08-30 16:07:41,555 INFO [werkzeug] 127.0.0.1 - - [30/Aug/2026 16:07:41] "POST /predict HTTP/1.1" 200 -
+2026-08-30 16:11:58,546 INFO [werkzeug] 127.0.0.1 - - [30/Aug/2026 16:11:58] "GET /health HTTP/1.1" 200 -
+2026-08-30 16:11:58,575 INFO [wine-predict-api] Prediction served: class_0
+2026-08-30 16:11:58,575 INFO [werkzeug] 127.0.0.1 - - [30/Aug/2026 16:11:58] "POST /predict HTTP/1.1" 200 -
+2026-08-30 16:11:58,588 INFO [werkzeug] 127.0.0.1 - - [30/Aug/2026 16:11:58] "GET /version HTTP/1.1" 200 -
+2026-08-30 16:11:58,616 INFO [wine-predict-api] Prediction served: class_0
+2026-08-30 16:11:58,616 INFO [werkzeug] 127.0.0.1 - - [30/Aug/2026 16:11:58] "POST /predict HTTP/1.1" 200 -
