@@ -1,11 +1,14 @@
+```yaml
 name: CI/CD - Build, Test, Publish, Deploy
 
-# Triggers on every change to main (release path) and on PRs (validation only).
+# Triggers on every change to main and on pull requests.
 on:
   push:
     branches: ["main"]
+
   pull_request:
     branches: ["main"]
+
   workflow_dispatch:
     inputs:
       target_slot:
@@ -16,18 +19,28 @@ on:
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dam405-wine-predict-api
 
+
+# ============================================================================
+# 1) LINT + UNIT TEST
+# ============================================================================
+# Guarantees:
+# - Python code is syntactically clean
+# - API validation and business logic work
+# - Model can be trained reproducibly
+# ============================================================================
+
 jobs:
-  # -------------------------------------------------------------------------
-  # 1) LINT + UNIT TEST — fast feedback, no Docker involved. Guarantees:
-  #    the code is syntactically clean and the API's business logic
-  #    (validation, error handling, response shape) is correct in isolation.
-  # -------------------------------------------------------------------------
+
   lint-and-test:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
@@ -35,10 +48,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
-      - name: Lint (flake8)
+      - name: Lint with flake8
         run: flake8 app/ model/ tests/ --max-line-length=120 --extend-ignore=E203
 
-      - name: Train model (reproducible build artefact)
+      - name: Train model
         run: python model/train.py
 
       - name: Run unit/API tests
@@ -52,16 +65,25 @@ jobs:
             model/model.joblib
             model/metadata.json
 
-  # -------------------------------------------------------------------------
-  # 2) BUILD + CONTAINER TEST — guarantees: the image actually builds,
-  #    starts, becomes healthy, and serves correct predictions over real
-  #    HTTP inside the container — not just inside the Flask test client.
-  # -------------------------------------------------------------------------
+
+  # ==========================================================================
+  # 2) BUILD + CONTAINER TEST
+  # ==========================================================================
+  # Guarantees:
+  # - Docker image builds successfully
+  # - Container starts successfully
+  # - Health endpoint works
+  # - Prediction API works over real HTTP
+  # ==========================================================================
+
   build-and-container-test:
     needs: lint-and-test
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Download trained model artefact
         uses: actions/download-artifact@v4
@@ -72,7 +94,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image (loaded locally for testing)
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -84,18 +106,25 @@ jobs:
 
       - name: Run container
         run: |
-          docker run -d --name wine-api-test -p 8000:8000 ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker run -d \
+            --name wine-api-test \
+            -p 8000:8000 \
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Install smoke-test dependencies
         run: pip install requests
 
-      - name: Container smoke test (real HTTP against the running container)
-        run: python tests/smoke_test.py --host http://localhost:8000
+      - name: Container smoke test
+        run: |
+          python tests/smoke_test.py --host http://localhost:8000
 
-      - name: Check image size (keep it lean)
-        run: docker image inspect ${{ env.IMAGE_NAME }}:${{ github.sha }} --format='Image size: {{.Size}} bytes'
+      - name: Check image size
+        run: |
+          docker image inspect \
+            ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --format='Image size: {{.Size}} bytes'
 
-      - name: Dump container logs (evidence, always captured)
+      - name: Dump container logs
         if: always()
         run: docker logs wine-api-test
 
@@ -103,29 +132,43 @@ jobs:
         if: always()
         run: docker rm -f wine-api-test
 
-      - name: Save image as build artifact (fallback if no registry push)
-        run: docker save ${{ env.IMAGE_NAME }}:${{ github.sha }} -o image.tar
+      - name: Save image as build artifact
+        run: |
+          docker save \
+            ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            -o image.tar
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
         with:
           name: docker-image
           path: image.tar
 
-  # -------------------------------------------------------------------------
-  # 3) PUBLISH — guarantees: only an image that passed every prior gate is
-  #    ever pushed, and it is immutably tagged by commit SHA (plus a
-  #    floating `latest`) so any release can be pinned or rolled back to.
-  #    Runs only on pushes to main, never on PRs.
-  # -------------------------------------------------------------------------
+
+  # ==========================================================================
+  # 3) PUBLISH TO GITHUB CONTAINER REGISTRY
+  # ==========================================================================
+  # Runs only when code is pushed to main.
+  # The image receives:
+  # - Immutable Git commit SHA tag
+  # - latest tag
+  # ==========================================================================
+
   publish:
     needs: build-and-container-test
+
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
+
     steps:
-      - uses: actions/checkout@v4
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Download trained model artefact
         uses: actions/download-artifact@v4
@@ -133,7 +176,7 @@ jobs:
           name: trained-model
           path: model/
 
-      - name: Log in to GHCR
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -143,53 +186,86 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
+
           tags: |
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:latest
+
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # -------------------------------------------------------------------------
-  # 4) DEPLOY (controlled rollout) — guarantees: the new version is only
-  #    ever exposed to 100% of traffic after it has proven itself healthy
-  #    in the idle slot. Gated behind a GitHub Environment so a human can
-  #    require manual approval before production cutover; rollback is the
-  #    same job run in reverse (see deployment/rollback.sh).
-  # -------------------------------------------------------------------------
+
+  # ==========================================================================
+  # 4) BLUE-GREEN DEPLOYMENT
+  # ==========================================================================
+  # The deployment job is connected to the GitHub "production" environment.
+  #
+  # In a real deployment environment, the commands below would:
+  # - Deploy the new image to the idle slot
+  # - Verify that it is healthy
+  # - Switch traffic to the new slot
+  # ==========================================================================
+
   deploy-blue-green:
     needs: publish
+
     runs-on: ubuntu-latest
-    environment: production   # attach required reviewers to this Environment in repo settings
+
+    environment: production
+
     steps:
-      - uses: actions/checkout@v4
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Determine target slot
         id: slot
-        run: echo "slot=${{ github.event.inputs.target_slot || 'green' }}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "slot=${{ github.event.inputs.target_slot || 'green' }}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy new image into idle slot
         run: |
-          echo "Pulling ${{ env.IMAGE_NAME }}:${{ github.sha }} into slot=${{ steps.slot.outputs.slot }}"
+          echo "Deploying image:"
+          echo "${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+          echo "Target slot:"
+          echo "${{ steps.slot.outputs.slot }}"
+
           echo "IMAGE_TAG=${{ github.sha }}" >> deploy.env
-          # On a real host/runner with access to the target environment:
-          #   docker compose pull app-${{ steps.slot.outputs.slot }}
-          #   docker compose up -d app-${{ steps.slot.outputs.slot }}
 
-      - name: Cut traffic over (blue-green switch)
+          # On a real deployment host:
+          #
+          # docker compose pull app-${{ steps.slot.outputs.slot }}
+          # docker compose up -d app-${{ steps.slot.outputs.slot }}
+
+      - name: Cut traffic over
         run: |
-          echo "Would run: ./deployment/switch_traffic.sh ${{ steps.slot.outputs.slot }}"
-          # ./deployment/switch_traffic.sh ${{ steps.slot.outputs.slot }}
+          echo "Switching traffic to:"
+          echo "${{ steps.slot.outputs.slot }}"
 
-      - name: Post-deploy verification
+          # On a real deployment host:
+          #
+          # ./deployment/switch_traffic.sh \
+          #   ${{ steps.slot.outputs.slot }}
+
+      - name: Post-deployment verification
         run: |
-          echo "Would run: python tests/smoke_test.py --host http://<prod-host>:8080"
+          echo "Running post-deployment verification..."
 
-      # If post-deploy verification fails, the recommended next step is:
-      #   ./deployment/rollback.sh <previous_slot>
-      # which is a config-only revert (see deployment/rollback.sh) and
-      # completes in under a second because the old slot was never stopped.
+          # On a real production host:
+          #
+          # python tests/smoke_test.py \
+          #   --host http://PRODUCTION-HOST:8080
+
+          echo "Post-deployment verification placeholder completed."
+
+
+      # If post-deployment verification fails, rollback can be performed using:
+      #
+      # ./deployment/rollback.sh <previous_slot>
+```
