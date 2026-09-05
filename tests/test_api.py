@@ -9,14 +9,15 @@ container-level smoke test (scripts/smoke_test.py).
 
 Run with:  pytest tests/ -v
 """
-import json
 import sys
 from pathlib import Path
 
+# The repo root must be importable before `app.main` can be imported, so these
+# two imports deliberately sit below the path setup (flake8 E402 is expected).
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import pytest
-from app.main import app, FEATURE_NAMES
+import pytest  # noqa: E402
+from app.main import app, FEATURE_NAMES  # noqa: E402
 
 
 @pytest.fixture

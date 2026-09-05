@@ -1,0 +1,7 @@
+[PASS] health check reachable
+[PASS] predict valid payload -> 200
+[PASS] predict response has prediction
+[PASS] predict incomplete payload -> 400
+[PASS] version endpoint -> 200
+
+All 5 smoke checks passed.

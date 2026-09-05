@@ -11,8 +11,6 @@
 #   docker compose up -d --build          # start blue (live) + green (idle)
 #   docker compose exec proxy nginx -s reload   # after switching upstream
 
-version: "3.9"
-
 services:
   app-blue:
     build:
@@ -56,7 +54,9 @@ services:
     image: nginx:1.27-alpine
     container_name: wine-api-proxy
     ports:
-      - "8080:80"
+      # Host port is overridable (PROXY_PORT=18080 docker compose up -d) so the
+      # stack can come up on a machine where 8080 is already taken.
+      - "${PROXY_PORT:-8080}:80"
     volumes:
       - ./deployment/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:

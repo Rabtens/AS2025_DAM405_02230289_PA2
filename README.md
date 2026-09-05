@@ -39,7 +39,11 @@ A containerised ML prediction API with a full CI/CD pipeline, built for
 │   └── main.tf                   # alternative Terraform IaC (illustrative)
 ├── .github/workflows/ci-cd.yml  # CI/CD pipeline
 ├── diagrams/                    # architecture + edge-porting diagrams
-└── evidence/                    # captured request/response transcripts, logs
+├── evidence/                    # captured request/response transcripts, logs
+└── report/
+    ├── REPORT.md                # the written assignment report
+    ├── SCREENSHOT_GUIDE.md      # how to capture each figure the report references
+    └── screenshots/             # captured figures
 ```
 
 ## Setup & run
@@ -89,13 +93,39 @@ curl -X POST http://localhost:8000/predict \
  "probabilities":{"class_0":0.9796,"class_1":0.0104,"class_2":0.01}}
 ```
 
+## Report
+
+The written report is at [`report/REPORT.md`](report/REPORT.md). It covers the
+architecture, each delivery-pipeline stage and what it guarantees, the
+containerisation choices, the rollout/rollback/monitoring strategy, the
+edge-porting analysis, results, and a reflection on limitations.
+
+`report/SCREENSHOT_GUIDE.md` lists every figure the report references and the
+exact commands to reproduce it.
+
 ## Evidence
 
-See `evidence/` for captured, real request/response transcripts and logs:
-- `request_response_transcript.txt` — every endpoint, success and failure paths
-- `test_run_output.txt` — the full test suite passing (11/11)
-- `blue_green_rollout_transcript.txt` — a live cutover + rollback demonstration
-- `server.log`, `server_green.log`, `proxy.log` — raw process logs
+See `evidence/` for captured, real transcripts and logs — all produced by
+running the commands in this README, not hand-written:
+
+| File | What it shows |
+|---|---|
+| `request_response_transcript.txt` | Every endpoint against the running container: 200/400/404/405/415 paths |
+| `test_run_output.txt` | The full test suite passing (11/11) |
+| `smoke_test_output.txt` | The container smoke test passing (5/5) over real HTTP |
+| `blue_green_rollout_transcript.txt` | A measured cutover + rollback: **600/600 requests returned 200 across the cutover window**, with per-slot request counts proving traffic actually moved |
+| `image_size_and_hardening.txt` | Image size (381.2 MB) and proof the process runs as `appuser` (uid 1000), not root |
+| `container.log`, `slot_blue.log`, `slot_green.log`, `proxy.log` | Raw container logs |
+
+### Note on ports
+
+The proxy publishes on host port `8080` by default. If that port is already in
+use, override it — the deploy scripts read the same value:
+
+```bash
+PROXY_PORT=18080 docker compose up -d
+PROXY_URL=http://localhost:18080 ./deployment/switch_traffic.sh green
+```
 
 ## AI tool use declaration
 

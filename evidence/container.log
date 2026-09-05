@@ -1,0 +1,20 @@
+2026-09-05 17:14:22,517 INFO [wine-predict-api] Prediction served: class_1
+172.17.0.1 - - [05/Sep/2026:17:14:22 +0000] "POST /predict HTTP/1.1" 200 134 "-" "curl/7.81.0"
+2026-09-05 17:14:22,523 WARNING [wine-predict-api] Validation failed: Missing required feature(s): ['malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids', 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']
+172.17.0.1 - - [05/Sep/2026:17:14:22 +0000] "POST /predict HTTP/1.1" 400 265 "-" "curl/7.81.0"
+2026-09-05 17:14:22,536 WARNING [wine-predict-api] Validation failed: Feature 'alcohol' must be numeric, got str.
+172.17.0.1 - - [05/Sep/2026:17:14:22 +0000] "POST /predict HTTP/1.1" 400 81 "-" "curl/7.81.0"
+2026-09-05 17:14:22,545 WARNING [wine-predict-api] Validation failed: Unexpected feature(s) not in model schema: ['rogue_field']
+172.17.0.1 - - [05/Sep/2026:17:14:22 +0000] "POST /predict HTTP/1.1" 400 96 "-" "curl/7.81.0"
+172.17.0.1 - - [05/Sep/2026:17:14:22 +0000] "POST /predict HTTP/1.1" 415 50 "-" "curl/7.81.0"
+2026-09-05 17:14:22,557 WARNING [wine-predict-api] Validation failed: Missing required field: 'features'.
+172.17.0.1 - - [05/Sep/2026:17:14:22 +0000] "POST /predict HTTP/1.1" 400 73 "-" "curl/7.81.0"
+172.17.0.1 - - [05/Sep/2026:17:14:22 +0000] "GET /does-not-exist HTTP/1.1" 404 78 "-" "curl/7.81.0"
+172.17.0.1 - - [05/Sep/2026:17:14:22 +0000] "GET /predict HTTP/1.1" 405 31 "-" "curl/7.81.0"
+127.0.0.1 - - [05/Sep/2026:17:14:31 +0000] "GET /health HTTP/1.1" 200 68 "-" "Python-urllib/3.12"
+172.17.0.1 - - [05/Sep/2026:17:14:43 +0000] "GET /health HTTP/1.1" 200 68 "-" "python-requests/2.33.1"
+2026-09-05 17:14:43,642 INFO [wine-predict-api] Prediction served: class_0
+172.17.0.1 - - [05/Sep/2026:17:14:43 +0000] "POST /predict HTTP/1.1" 200 137 "-" "python-requests/2.33.1"
+2026-09-05 17:14:43,644 WARNING [wine-predict-api] Validation failed: Missing required feature(s): ['malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids', 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']
+172.17.0.1 - - [05/Sep/2026:17:14:43 +0000] "POST /predict HTTP/1.1" 400 265 "-" "python-requests/2.33.1"
+172.17.0.1 - - [05/Sep/2026:17:14:43 +0000] "GET /version HTTP/1.1" 200 123 "-" "python-requests/2.33.1"

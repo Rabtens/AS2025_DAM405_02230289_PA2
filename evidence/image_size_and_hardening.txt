@@ -1,0 +1,19 @@
+=== Image size / build evidence  (2026-09-05T17:18:28Z) ===
+
+IMAGE                            ID             DISK USAGE   CONTENT SIZE   EXTRA
+dam405-wine-predict-api:1.0.0    7edc48f14436        400MB             0B   U    
+dam405-wine-predict-api:latest   7edc48f14436        400MB             0B   U    
+
+Size (bytes): 399697982
+Size (MB)   : 381.2
+
+--- Best-practice assertions verifiable from the image itself ---
+Runs as non-root user : appuser
+Entrypoint (gunicorn) : ["gunicorn","--bind","0.0.0.0:8000","--workers","2","--access-logfile","-","app.main:app"]
+HEALTHCHECK declared  : yes
+
+--- Confirm the running process is NOT root ---
+uid=1000(appuser) gid=1000(appuser) groups=1000(appuser)
+
+--- Base image comparison (slim vs full) ---
+(python base images pruned from local cache)

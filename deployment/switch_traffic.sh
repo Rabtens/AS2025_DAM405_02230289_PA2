@@ -15,6 +15,29 @@
 set -euo pipefail
 NEW_LIVE_SLOT="${1:?Usage: switch_traffic.sh <blue|green>}"
 NGINX_CONF="deployment/nginx.conf"
+# Must match the host port the proxy is published on (see PROXY_PORT in docker-compose.yml).
+PROXY_URL="${PROXY_URL:-http://localhost:8080}"
+# `python` is not on PATH on every host; prefer python3.
+PYTHON="${PYTHON:-python3}"
+# Rewrite the upstream line in place, preserving the file's inode.
+#
+# NOTE: `sed -i` must NOT be used here. It writes a temporary file and renames
+# it over the target, which allocates a new inode. deployment/nginx.conf is
+# bind-mounted as a *single file* into the proxy container, so the container
+# would go on reading the original inode: the config on disk would look
+# switched while nginx kept serving the old slot -- a cutover that silently
+# does nothing. Truncate-and-rewrite (`> "$file"`) keeps the same inode and is
+# therefore visible inside the container.
+rewrite_upstream() {
+  local slot="$1" file="$2" tmp
+  tmp="$(mktemp)"
+  # '@' delimiter: the pattern contains '|' for the blue/green alternation.
+  sed -E "s@^([[:space:]]*)server wine-api-(blue|green):8000;.*@\\1server wine-api-${slot}:8000;   # <- currently live slot@" \
+      "$file" > "$tmp"
+  cat "$tmp" > "$file"          # truncate + rewrite: same inode, mount stays valid
+  rm -f "$tmp"
+}
+
 
 if [[ "$NEW_LIVE_SLOT" != "blue" && "$NEW_LIVE_SLOT" != "green" ]]; then
   echo "Slot must be 'blue' or 'green'"; exit 1
@@ -25,11 +48,15 @@ docker compose exec -T "app-${NEW_LIVE_SLOT}" python -c \
   "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)"
 
 echo "== 2/3: Flipping nginx upstream to wine-api-${NEW_LIVE_SLOT} =="
-sed -i.bak -E "s/server wine-api-(blue|green):8000;/server wine-api-${NEW_LIVE_SLOT}:8000;/" "$NGINX_CONF"
-docker compose exec proxy nginx -s reload
+rewrite_upstream "$NEW_LIVE_SLOT" "$NGINX_CONF"
+
+# Validate the config inside the container before reloading. `nginx -t`
+# turns a typo into a failed release instead of a downed proxy.
+docker compose exec -T proxy nginx -t
+docker compose exec -T proxy nginx -s reload
 
 echo "== 3/3: Post-cutover smoke test through the proxy =="
-python tests/smoke_test.py --host http://localhost:8080
+"$PYTHON" tests/smoke_test.py --host "$PROXY_URL"
 
 echo "Cutover complete. Live slot is now: ${NEW_LIVE_SLOT}"
 echo "Previous slot is left running for instant rollback: ./deployment/rollback.sh"

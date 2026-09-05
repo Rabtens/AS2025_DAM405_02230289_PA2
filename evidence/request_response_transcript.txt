@@ -1,39 +1,114 @@
-=== GET /health ===
-{"model_version":"1.0.0","status":"healthy","uptime_seconds":14.5}
+===============================================================
+ DAM405 Assignment 2 - Request/Response transcript
+ Captured: 2026-09-05T17:14:22Z
+ Target:   containerised service (docker run -p 8000:8000)
+ Image:    dam405-wine-predict-api:1.0.0
+===============================================================
 
-HTTP 200
+--- 1. GET /health  (expect 200, status healthy) ---
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 68
 
-=== GET /version ===
-{"algorithm":"RandomForestClassifier","model_version":"1.0.0","test_accuracy":1.0,"trained_at_utc":"2026-08-30T16:04:02Z"}
+{"model_version":"1.0.0","status":"healthy","uptime_seconds":25.69}
 
-HTTP 200
+--- 2. GET /version  (expect 200, model_version 1.0.0) ---
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 123
 
-=== POST /predict  (valid payload, sample A) ===
+{"algorithm":"RandomForestClassifier","model_version":"1.0.0","test_accuracy":1.0,"trained_at_utc":"2026-09-05T16:47:12Z"}
+
+--- 3. POST /predict  valid 13-feature vector (expect 200) ---
+REQUEST: {"features": {"alcohol": 13.2, "malic_acid": 1.78, "ash": 2.14, "alcalinity_of_ash": 11.2, "magnesium": 100.0, "total_phenols": 2.65, "flavanoids": 2.76, "nonflavanoid_phenols": 0.26, "proanthocyanins": 1.28, "color_intensity": 4.38, "hue": 1.05, "od280/od315_of_diluted_wines": 3.4, "proline": 1050.0}}
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 137
+
 {"model_version":"1.0.0","prediction":"class_0","prediction_index":0,"probabilities":{"class_0":0.9796,"class_1":0.0104,"class_2":0.01}}
 
-HTTP 200
+--- 4. POST /predict  a second, different vector (expect a different class) ---
+REQUEST: {"features": {"alcohol": 12.37, "malic_acid": 0.94, "ash": 1.36, "alcalinity_of_ash": 10.6, "magnesium": 88.0, "total_phenols": 1.98, "flavanoids": 0.57, "nonflavanoid_phenols": 0.28, "proanthocyanins": 0.42, "color_intensity": 1.95, "hue": 1.05, "od280/od315_of_diluted_wines": 1.82, "proline": 520.0}}
+{"model_version":"1.0.0","prediction":"class_1","prediction_index":1,"probabilities":{"class_0":0.0,"class_1":0.865,"class_2":0.135}}
 
-=== POST /predict  (valid payload, sample B - different class) ===
-{"model_version":"1.0.0","prediction":"class_1","prediction_index":1,"probabilities":{"class_0":0.0521,"class_1":0.9479,"class_2":0.0}}
 
-HTTP 200
+--- 5. POST /predict  missing required features (expect 400) ---
+HTTP/1.1 400 BAD REQUEST
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 265
 
-=== POST /predict  (missing features -> expect 400) ===
 {"detail":"Missing required feature(s): ['malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids', 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']","error":"Invalid input"}
 
-HTTP 400
+--- 6. POST /predict  non-numeric feature value (expect 400) ---
+HTTP/1.1 400 BAD REQUEST
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 81
 
-=== POST /predict  (non-numeric feature -> expect 400) ===
 {"detail":"Feature 'alcohol' must be numeric, got str.","error":"Invalid input"}
 
-HTTP 400
+--- 7. POST /predict  unexpected extra feature (expect 400) ---
+HTTP/1.1 400 BAD REQUEST
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 96
 
-=== POST /predict  (wrong content-type -> expect 415) ===
+{"detail":"Unexpected feature(s) not in model schema: ['rogue_field']","error":"Invalid input"}
+
+--- 8. POST /predict  wrong Content-Type (expect 415) ---
+HTTP/1.1 415 UNSUPPORTED MEDIA TYPE
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 50
+
 {"error":"Content-Type must be application/json"}
 
-HTTP 415
+--- 9. POST /predict  missing 'features' key (expect 400) ---
+HTTP/1.1 400 BAD REQUEST
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 73
 
-=== GET /nonexistent -> expect 404 ===
+{"detail":"Missing required field: 'features'.","error":"Invalid input"}
+
+--- 10. GET /does-not-exist  (expect 404) ---
+HTTP/1.1 404 NOT FOUND
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 78
+
 {"detail":"Valid endpoints: /health, /version, /predict","error":"Not found"}
 
-HTTP 404
+--- 11. GET /predict  wrong method (expect 405) ---
+HTTP/1.1 405 METHOD NOT ALLOWED
+Server: gunicorn
+Date: Sat, 05 Sep 2026 17:14:22 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 31
+
+{"error":"Method not allowed"}
+
+=== End of transcript ===
