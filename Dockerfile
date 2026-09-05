@@ -29,7 +29,7 @@ FROM python:3.12-slim AS runtime
 # Metadata (visible via `docker inspect`)
 LABEL org.opencontainers.image.title="dam405-wine-predict-api" \
       org.opencontainers.image.description="Wine cultivar classifier prediction service (DAM405 Assignment 2)" \
-      org.opencontainers.image.source="https://github.com/<your-org>/<your-repo>"
+      org.opencontainers.image.source="https://github.com/Rabtens/AS2025_DAM405_02230289_PA2"
 
 # Create an unprivileged user/group to run the process as (never run as root).
 RUN groupadd --gid 1000 appuser && \
