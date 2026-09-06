@@ -33,6 +33,39 @@ rewrite_upstream() {
   rm -f "$tmp"
 }
 
+# Refuse to touch nginx.conf unless the proxy is actually running.
+#
+# This check must come BEFORE rewrite_upstream. Otherwise the config file on
+# disk gets rewritten, the `docker compose exec proxy` call then fails with a
+# bare `service "proxy" is not running`, and the script exits leaving the file
+# claiming one slot is live while nginx (stopped, or still serving the old
+# config) says otherwise -- the same disk-vs-runtime inconsistency the inode
+# bug caused.
+require_proxy_running() {
+  if ! docker compose ps --status running --services 2>/dev/null | grep -qx proxy; then
+    local port="${PROXY_PORT:-8080}"
+    cat >&2 <<EOF
+ERROR: the 'proxy' service is not running, so there is no cutover to perform.
+       Nothing has been changed.
+
+Start the stack first:
+
+  PROXY_PORT=${port} docker compose up -d
+
+If the proxy then fails with "address already in use", host port ${port} is
+taken by something else. Pick a free port and use it consistently:
+
+  export PROXY_PORT=18080 PROXY_URL=http://localhost:18080
+  docker compose up -d
+
+Check what came up with:  docker compose ps
+EOF
+    exit 1
+  fi
+}
+
+
+require_proxy_running
 
 echo "== Rolling back: pointing nginx upstream back to wine-api-${REVERT_TO_SLOT} =="
 rewrite_upstream "$REVERT_TO_SLOT" "$NGINX_CONF"

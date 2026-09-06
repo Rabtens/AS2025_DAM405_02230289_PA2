@@ -1,4 +1,4 @@
-# DAM405 · Assignment 2 — Wine-Cultivar Prediction Service
+# DAM405 · Assignment 2 - Wine-Cultivar Prediction Service
 
 A containerised ML prediction API with a full CI/CD pipeline, built for
 **DAM405 Machine Learning Operations, Programming Assignment 2**.
@@ -140,4 +140,4 @@ actual process, per your module and institutional AI-use policy.
 
 Submitted as coursework for DAM405. Dataset: UCI Wine recognition
 dataset, distributed with scikit-learn (BSD-licensed).
-# AS2025_DAM405_02230289_PA2
+

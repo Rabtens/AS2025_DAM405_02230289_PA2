@@ -1,75 +1,16 @@
 ===================================================================
  DAM405 Assignment 2 — Blue-green rollout & rollback transcript
- Captured: 2026-09-05T17:18:01Z
- Proxy:    http://localhost:18080   (PROXY_PORT override; 8080 was in use)
+ Captured: 2026-09-06T13:56:07Z
+ Proxy:    http://localhost:18080
  Method:   client traffic carries User-Agent 'dam405-demo-client' so it can be counted
            separately from each slot's own container HEALTHCHECK polls.
 ===================================================================
 
 ### 0. Topology — both slots run continuously; exactly one is live
 NAME             STATUS
-wine-api-blue    Up 2 minutes (healthy)
-wine-api-green   Up 2 minutes (healthy)
-wine-api-proxy   Up 2 seconds
+wine-api-blue    Up 2 hours (healthy)
+wine-api-green   Up 2 hours (healthy)
 
 ### 1. BEFORE cutover — blue is live
-    server wine-api-blue:8000;   # <- currently live slot. Swap to wine-api-green:8000 to cut over.
-20 client requests through the proxy: 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 
-Requests served by each slot:   blue=435  green=0
-
-### 2. CUTOVER  ->  ./deployment/switch_traffic.sh green
-    (a continuous request loop runs across the cutover to measure downtime)
-== 1/3: Smoke-testing wine-api-green directly (pre-cutover) ==
-== 2/3: Flipping nginx upstream to wine-api-green ==
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
-2026/09/05 17:18:02 [notice] 43#43: signal process started
-== 3/3: Post-cutover smoke test through the proxy ==
-[PASS] health check reachable
-[PASS] predict valid payload -> 200
-[PASS] predict response has prediction
-[PASS] predict incomplete payload -> 400
-[PASS] version endpoint -> 200
-
-All 5 smoke checks passed.
-Cutover complete. Live slot is now: green
-Previous slot is left running for instant rollback: ./deployment/rollback.sh
-[1]+  Done                    ( for i in $(seq 600);
-do
-    curl -s -A "$UA" -o /dev/null -w "%{http_code}\n" --max-time 2 $PROXY_URL/health;
-done > /tmp/poll.txt 2>&1 )
-
-Zero-downtime measurement across the cutover window:
-  requests sent  : 600
-  HTTP 200       : 600
-  failed/non-200 : 0
-
-### 3. AFTER cutover — green is live
-    server wine-api-green:8000;   # <- currently live slot
-Requests served during the cutover window:  blue +97   green +503
-10 more client requests: 200 200 200 200 200 200 200 200 200 200 
-Of those 10:  blue +0   green +10   <-- all traffic now on GREEN
-
-### 4. ROLLBACK  ->  ./deployment/rollback.sh blue
-== Rolling back: pointing nginx upstream back to wine-api-blue ==
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
-2026/09/05 17:18:06 [notice] 71#71: signal process started
-== Verifying rollback ==
-[PASS] health check reachable
-[PASS] predict valid payload -> 200
-[PASS] predict response has prediction
-[PASS] predict incomplete payload -> 400
-[PASS] version endpoint -> 200
-
-All 5 smoke checks passed.
-Rollback complete. Live slot is now: blue
-
     server wine-api-blue:8000;   # <- currently live slot
-10 more client requests: 200 200 200 200 200 200 200 200 200 200 
-Of those 10:  blue +10   green +0   <-- traffic is back on BLUE
-
-### 5. Service healthy through the proxy after the full round trip
-{"model_version":"1.0.0","status":"healthy","uptime_seconds":169.76}
-
-=== End of transcript ===
+20 client requests through the proxy: 000 
